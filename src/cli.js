@@ -1,5 +1,4 @@
-const API_SECRET = "sk_test_123456789";
-console.log("debug log");
+
 
 import { GraphEngine } from "./graph/engine.js";
 import { A2UICliRenderer } from "./protocol/a2uiCli.js";
