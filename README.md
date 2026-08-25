@@ -1,36 +1,75 @@
 # 🚀 CommitSense AI
 
-Agentic Git Security & Quality Inspector powered by Google A2A, MCP, and A2UI.
+> **Agentic Git Security & Quality Inspection Engine**
 
-## Features
-- **MCP Protocol:** Reads Git diff and repository status safely.
-- **A2A Architecture:** Orchestrates Multi-Agent system (Security, Quality, Context agents).
-- **Harness Evaluator:** Automated PASS/WARN/BLOCK decision layer.
-- **A2UI CLI & Web Dashboard:** Real-time visual evaluation outputs.
-
-## Quick Start
-```bash
-npm install
-npm start       # Run CLI Inspector
-npm run web     # Run Web Dashboard (localhost:3000)
-
+CommitSense AI, yazılım geliştirme süreçlerinde `git commit` öncesi veya CI/CD aşamalarında kod değişikliklerini (`git diff`) çoklu ajan (Multi-Agent) mimarisiyle tarayan, güvenlik ihlallerini ve kod kalitesi sorunlarını anlık olarak tespit eden yapay zeka destekli bir denetim motorudur.
 
 ---
 
-### 2. Terminalde Çalıştırılacak Komutlar
+## 💡 Neden CommitSense AI?
 
-`README.md` dosyasını kaydettikten sonra VS Code terminalinde (PowerShell) sırasıyla şu komutları koştur:
+Geleneksel linter ve linter benzeri statik analiz araçları kural tabanlı çalışır ve kodun **bağlamını (context)** anlayamaz. CommitSense AI ise:
+* Hassas veri (API Key, Secret vb.) sızıntılarını commit atılmadan önce **engeller (BLOCK)**.
+* Unutulmuş `debugger`, `console.log` veya hatalı kod kalıplarını **uyarır (WARN)**.
+* Yapılan değişiklikleri analiz ederek standartlara uygun **Commit Mesajı önerileri** sunar.
+* Terminal (CLI) ve Canlı İzleme (Web Dashboard) arabirimleri üzerinden anlık geri bildirim sağlar.
 
-```powershell
-# 1. Değişiklikleri Git'e ekle ve ilk commit'i at
-git add .
-git commit -m "feat(core): initial release of CommitSense AI"
+---
 
-# 2. Ana dalı main yap
-git branch -M main
+## 🏗️ Mimari ve Katmanlar
 
-# 3. GitHub repository bağlantını ekle (Kendi GitHub repo URL'ni yapıştır)
-git remote add origin https://github.com/KULLANICI_ADI/commit-sense-ai.git
+Proje, bağımsız modüllerin ve ajanların haberleştiği modüler bir mimari üzerine kurulmuştur:
 
-# 4. Kodları GitHub'a gönder
-git push -u origin main
+```text
+               +----------------------------------+
+               |  CLI / Web Dashboard / Pre-Commit |
+               +----------------------------------+
+                                |
+                                v
+                      +-------------------+
+                      |    GraphEngine    |
+                      |   (Orkestratör)   |
+                      +-------------------+
+                                |
+         +----------------------+----------------------+
+         |                      |                      |
+         v                      v                      v
++-----------------+   +-------------------+   +------------------+
+|   MCP Server    |   |  A2A Message Bus  |   | HarnessEvaluator |
+| (git diff/status|   | (Görev Dağıtımı)  |   | (Nihai Karar)    |
++-----------------+   +-------------------+   +------------------+
+                                |
+         +----------------------+----------------------+
+         |                      |                      |
+         v                      v                      v
++-----------------+   +-------------------+   +------------------+
+|  SecurityAgent  |   |   QualityAgent    |   |   ContextAgent   |
+| (Secret Scan)   |   | (Code Hygiene)    |   | (Semantic/Diff)  |
++-----------------+   +-------------------+   +------------------+
+
+```
+
+### 1. Model Context Protocol (MCP) Katmanı
+Git deposundaki staged (sahneye alınan) veya unstaged (çalışma alanındaki) değişiklikleri güvenli bir şekilde `git diff` ve `git status` araçları üzerinden okur ve ajanlara aktarır.
+
+### 2. A2A (Agent-to-Agent) Protokolü
+Ajanların kendi aralarında ortak veri formatında (Task, AgentCard, Artifact) haberleşmesini ve bağımsız görev yürütmesini (ExecuteTask) sağlar.
+
+### 3. Otonom Alt Ajanlar (Subagents)
+* 🛡️ **SecurityAgent:** AWS Key, Private Key, JWT gibi hassas bilgilerin sızmasını önler.
+* 🐞 **QualityAgent:** `debugger`, boş `catch` blokları, print/log kalıntıları gibi kod hijyeni ihlallerini yakalar.
+* 🧠 **ContextAgent:** Kodun mimari bağlamını inceleyerek geliştiriciye Conventional Commits formatında açıklayıcı commit mesajları önerir.
+
+### 4. Harness Evaluator (Karar Mekanizması)
+Tüm ajanlardan gelen analiz sonuçlarını (Artifacts) birleştirerek projenin commit edilebilirliğine dair nihai kararı verir:
+* 🟢 **PASS:** Kod temiz, commit atılabilir.
+* 🟡 **WARN:** Küçük kalite sorunları var, dikkat edilmeli.
+* 🔴 **BLOCK:** Kritik güvenlik veya kod hatası var, commit engellendi!
+
+---
+
+## 📊 Öne Çıkan Özellikler
+
+* **Çift Arayüz Desteği:** Hem renkli ve bilgilendirici bir CLI arayüzü hem de tarayıcı üzerinden kontrol edilebilen canlı Web Dashboard.
+* **Hızlı Paralel Analiz:** Tüm alt ajanlar `Promise.all` kurgusuyla diff verisini eş zamanlı inceler.
+* **Esnek Kural Seti:** Güvenlik ve kalite standartlarına göre kolayca genişletilebilir ajan mimarisi.
