@@ -2,12 +2,14 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CommitSense AI - Dashboard</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0b0f19; color: #f8fafc; margin: 0; padding: 30px; }
     .container { max-width: 900px; margin: 0 auto; }
     .header { text-align: center; margin-bottom: 30px; }
-    .title { font-size: 2rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .title { font-size: 2rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px; }
+    .controls { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 15px; }
     .card { background: #151d2a; padding: 24px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
     .badge { padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.5px; }
     .PASS { background: #10b981; color: #022c22; }
@@ -15,8 +17,11 @@
     .BLOCK { background: #ef4444; color: #ffffff; }
     .btn-inspect { background: #0284c7; color: white; border: none; padding: 12px 28px; font-size: 1rem; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
     .btn-inspect:hover { background: #0369a1; transform: translateY(-1px); }
+    .btn-inspect:disabled { background: #475569; cursor: not-allowed; }
     .issue-box { background: #0f172a; border-left: 4px solid #ef4444; padding: 12px; margin-top: 10px; border-radius: 4px; }
     .clean-box { color: #10b981; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+    .checkbox-label { font-size: 0.95rem; color: #cbd5e1; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .error-card { border-color: #ef4444; color: #fca5a5; }
   </style>
 </head>
 <body>
@@ -24,7 +29,13 @@
     <div class="header">
       <div class="title">🚀 CommitSense AI Dashboard</div>
       <p style="color: #94a3b8;">Agentic Git Security & Quality Inspection</p>
-      <button class="btn-inspect" onclick="runInspection()">🔍 Taramayı Başlat</button>
+      
+      <div class="controls">
+        <label class="checkbox-label">
+          <input type="checkbox" id="stagedOnly" checked> Sadece Staged (Sahneye Alınan) Değişiklikleri Tara
+        </label>
+        <button id="inspectBtn" class="btn-inspect" onclick="runInspection()">🔍 Taramayı Başlat</button>
+      </div>
     </div>
 
     <div id="results"></div>
@@ -33,44 +44,86 @@
   <script>
     async function runInspection() {
       const container = document.getElementById('results');
-      container.innerHTML = '<p style="text-align:center; color:#94a3b8;">Ajanlar Git değişikliklerini analiz ediyor...</p>';
+      const inspectBtn = document.getElementById('inspectBtn');
+      const stagedOnly = document.getElementById('stagedOnly').checked;
 
-      const res = await fetch('/api/inspect');
-      const data = await res.json();
+      inspectBtn.disabled = true;
+      container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding: 20px;">🤖 Ajanlar Git değişikliklerini analiz ediyor, lütfen bekleyin...</p>';
 
-      if(data.status === "EMPTY") {
-        container.innerHTML = `<div class="card"><h3>ℹ️ ${data.message}</h3></div>`;
-        return;
+      try {
+        const res = await fetch(`/api/inspect?staged=${stagedOnly}`);
+        
+        if (!res.ok) {
+          throw new Error(`Sunucu Hatası: ${res.status} ${res.statusText}`);
+        }
+
+        const data = await res.json();
+
+        // 1. Değişiklik Yok Durumu (EMPTY)
+        if (data.status === "EMPTY") {
+          container.innerHTML = `<div class="card"><h3>ℹ️ ${data.message || "İncelenecek Git değişikliği bulunamadı."}</h3></div>`;
+          return;
+        }
+
+        // 2. Güvenlik İhlalleri
+        const secIssuesList = data.reports?.security?.issues || [];
+        const secIssues = secIssuesList.length 
+          ? secIssuesList.map(i => `<div class="issue-box"><strong>[${i.severity}]</strong> ${escapeHtml(i.message)}<br><small style="color:#94a3b8;">Öneri: ${escapeHtml(i.suggestion)}</small></div>`).join('')
+          : '<div class="clean-box">✔ Güvenlik zafiyeti veya sızıntı tespit edilmedi.</div>';
+
+        // 3. Kalite İhlalleri
+        const qualIssuesList = data.reports?.quality?.issues || [];
+        const qualIssues = qualIssuesList.length 
+          ? qualIssuesList.map(i => `<div class="issue-box" style="border-color:#f59e0b;"><strong>[${i.severity}]</strong> ${escapeHtml(i.message)}<br><small style="color:#94a3b8;">Öneri: ${escapeHtml(i.suggestion)}</small></div>`).join('')
+          : '<div class="clean-box">✔ Kod kalitesi standartlara uygun.</div>';
+
+        // 4. Önerilen Commit Mesajı
+        const suggestedMsg = data.reports?.context?.suggestedCommitMsg || "Commit mesajı oluşturulamadı.";
+
+        // Raporu Ekrana Çizdir
+        container.innerHTML = `
+          <div class="card">
+            <h2>Karar: <span class="badge ${data.decision?.status || 'WARN'}">${data.decision?.status || 'BİLİNMİYOR'}</span></h2>
+            <p style="color:#cbd5e1; font-size: 1.05rem;">${escapeHtml(data.decision?.reason || '')}</p>
+          </div>
+          <div class="card">
+            <h3>🛡️ Güvenlik Raporu</h3>
+            ${secIssues}
+          </div>
+          <div class="card">
+            <h3>🐞 Kod Kalite Raporu</h3>
+            ${qualIssues}
+          </div>
+          <div class="card">
+            <h3>📝 Önerilen Commit Mesajı</h3>
+            <p style="background:#0f172a; padding:12px; border-radius:6px; color:#38bdf8; font-family:monospace; white-space: pre-wrap;">${escapeHtml(suggestedMsg)}</p>
+          </div>
+        `;
+      } catch (err) {
+        console.error("Inspection error:", err);
+        container.innerHTML = `
+          <div class="card error-card">
+            <h3>❌ Bağlantı/Tarama Hatası</h3>
+            <p>${escapeHtml(err.message)}</p>
+          </div>
+        `;
+      } finally {
+        inspectBtn.disabled = false;
       }
-
-      const secIssues = data.reports.security.issues.length 
-        ? data.reports.security.issues.map(i => `<div class="issue-box"><strong>[${i.severity}]</strong> ${i.message}<br><small style="color:#94a3b8;">Öneri: ${i.suggestion}</small></div>`).join('')
-        : '<div class="clean-box">✔ Güvenlik zafiyeti veya sızıntı tespit edilmedi.</div>';
-
-      const qualIssues = data.reports.quality.issues.length 
-        ? data.reports.quality.issues.map(i => `<div class="issue-box" style="border-color:#f59e0b;"><strong>[${i.severity}]</strong> ${i.message}<br><small style="color:#94a3b8;">Öneri: ${i.suggestion}</small></div>`).join('')
-        : '<div class="clean-box">✔ Kod kalitesi standartlara uygun.</div>';
-
-      container.innerHTML = `
-        <div class="card">
-          <h2>Karar: <span class="badge ${data.decision.status}">${data.decision.status}</span></h2>
-          <p style="color:#cbd5e1; font-size: 1.05rem;">${data.decision.reason}</p>
-        </div>
-        <div class="card">
-          <h3>🛡️ Güvenlik Raporu</h3>
-          ${secIssues}
-        </div>
-        <div class="card">
-          <h3>🐞 Kod Kalite Raporu</h3>
-          ${qualIssues}
-        </div>
-        <div class="card">
-          <h3>📝 Önerilen Commit Mesajı</h3>
-          <p style="background:#0f172a; padding:12px; border-radius:6px; color:#38bdf8; font-family:monospace;">${data.reports.context.suggestedCommitMsg}</p>
-        </div>
-      `;
     }
 
+    // Basit HTML Kaçış Fonksiyonu (XSS Önleme)
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Sayfa yüklendiğinde otomatik ilk taramayı yap
     runInspection();
   </script>
 </body>

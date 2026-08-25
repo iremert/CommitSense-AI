@@ -7,22 +7,44 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const engine = new GraphEngine();
 
+// Statik dosyaları dışarıya sun (public/index.html vb.)
 app.use(express.static(path.join(__dirname, "public")));
+app.use(express.json());
 
-// Inspection API
+// 1. Git Denetim API'si
 app.get("/api/inspect", async (req, res) => {
-  const result = await engine.runInspection({ staged: req.query.staged === "true" });
-  res.json(result);
+  try {
+    const isStaged = req.query.staged === "true";
+    const result = await engine.runInspection({ staged: isStaged });
+    return res.json(result);
+  } catch (error) {
+    console.error("❌ Inspection sırasında hata oluştu:", error);
+    return res.status(500).json({
+      status: "ERROR",
+      message: "İnceleme sırasında sunucu hatası meydana geldi.",
+      error: error.message
+    });
+  }
 });
 
-// Registered A2A Agents API
+// 2. Kayıtlı A2A Ajan Kartları API'si
 app.get("/api/agents", (req, res) => {
-  res.json(engine.bus.getAgentCards());
+  try {
+    const agentCards = engine.bus.getAgentCards();
+    return res.json(agentCards);
+  } catch (error) {
+    console.error("❌ Ajan kartları çekilirken hata oluştu:", error);
+    return res.status(500).json({
+      status: "ERROR",
+      message: "Ajan bilgileri alınamadı."
+    });
+  }
 });
 
+// Sunucuyu Başlat
 app.listen(PORT, () => {
-  console.log(`\n🌐 Web Dashboard hazır: http://localhost:${PORT}`);
+  console.log(`\n🌐 CommitSense AI Dashboard hazır: http://localhost:${PORT}`);
 });

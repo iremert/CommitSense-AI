@@ -2,51 +2,67 @@ import chalk from "chalk";
 
 export class A2UICliRenderer {
   render(result) {
-    if (result.status === "EMPTY") {
-      console.log(chalk.yellow(`\nℹ️  ${result.message}`));
+    if (!result || result.status === "EMPTY") {
+      console.log(chalk.yellow(`\nℹ️  ${result?.message || "İncelenecek Git değişikliği bulunamadı."}`));
       return;
     }
 
-    const { decision, reports } = result;
+    const { decision = {}, reports = {}, tasks = {} } = result;
 
     console.log("\n" + chalk.cyan.bold("=================================================="));
-    console.log(chalk.cyan.bold("            CommitSense AI - Inspection            "));
+    console.log(chalk.cyan.bold("             CommitSense AI - Inspection          "));
     console.log(chalk.cyan.bold("=================================================="));
 
-    // Status Banner
+    // 1. Status Banner (Genel Sonuç)
     if (decision.status === "PASS") {
       console.log(chalk.bgGreen.black.bold("\n  STATUS: PASS  ") + " " + chalk.green(decision.reason));
     } else if (decision.status === "WARN") {
       console.log(chalk.bgYellow.black.bold("\n  STATUS: WARN  ") + " " + chalk.yellow(decision.reason));
     } else {
-      console.log(chalk.bgRed.white.bold("\n  STATUS: BLOCK ") + " " + chalk.red(decision.reason));
+      console.log(chalk.bgRed.white.bold("\n  STATUS: BLOCK ") + " " + chalk.red(decision.reason || "Kritik engeller tespit edildi."));
     }
 
-    // Security Section
+    // 2. Güvenlik Taraması Bölümü (Security)
+    const secIssues = reports.security?.issues || [];
     console.log("\n" + chalk.bold.underline("🛡️  Security & Secret Scanner"));
-    if (reports.security.issues.length === 0) {
+    if (secIssues.length === 0) {
       console.log(chalk.green("  ✔ Hiçbir güvenlik açığı veya sızıntı bulunamadı."));
     } else {
-      reports.security.issues.forEach(issue => {
-        console.log(chalk.red(`  ✖ [${issue.severity}] ${issue.message}`));
-        console.log(chalk.gray(`    Öneri: ${issue.suggestion}`));
+      secIssues.forEach(issue => {
+        const isCritical = issue.severity === "CRITICAL" || issue.severity === "HIGH";
+        const badge = isCritical ? chalk.red(`  ✖ [${issue.severity}]`) : chalk.yellow(`  ⚠️ [${issue.severity}]`);
+        console.log(`${badge} ${issue.message}`);
+        if (issue.suggestion) {
+          console.log(chalk.gray(`    Öneri: ${issue.suggestion}`));
+        }
       });
     }
 
-    // Quality Section
+    // 3. Kod Kalitesi Bölümü (Quality)
+    const qualIssues = reports.quality?.issues || [];
     console.log("\n" + chalk.bold.underline("🐞  Code Quality & Bug Inspector"));
-    if (reports.quality.issues.length === 0) {
+    if (qualIssues.length === 0) {
       console.log(chalk.green("  ✔ Kod kalitesi standartlara uygun."));
     } else {
-      reports.quality.issues.forEach(issue => {
-        console.log(chalk.yellow(`  ⚠️ [${issue.severity}] ${issue.message}`));
-        console.log(chalk.gray(`    Öneri: ${issue.suggestion}`));
+      qualIssues.forEach(issue => {
+        const isCritical = issue.severity === "CRITICAL" || issue.severity === "HIGH";
+        const badge = isCritical ? chalk.red(`  ✖ [${issue.severity}]`) : chalk.yellow(`  ⚠️ [${issue.severity}]`);
+        console.log(`${badge} ${issue.message}`);
+        if (issue.suggestion) {
+          console.log(chalk.gray(`    Öneri: ${issue.suggestion}`));
+        }
       });
     }
 
-    // Commit Message Suggestion
-    console.log("\n" + chalk.bold.underline("📝  Suggested Commit Message"));
-    console.log(chalk.magenta(`  "${reports.context.suggestedCommitMsg}"`));
+    // 4. Git Bağlamı ve Commit Önerisi (Context)
+    const contextReport = reports.context || {};
+    console.log("\n" + chalk.bold.underline("📝  Git Context & Suggested Commit"));
+    if (contextReport.summary) {
+      console.log(chalk.gray(`  Özet: ${contextReport.summary}`));
+    }
+    if (contextReport.suggestedCommitMsg) {
+      console.log(chalk.magenta.bold(`  Commit Mesajı: "${contextReport.suggestedCommitMsg}"`));
+    }
 
     console.log("\n" + chalk.cyan("==================================================\n"));
   }
