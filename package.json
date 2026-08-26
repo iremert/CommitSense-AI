@@ -1,12 +1,12 @@
 {
   "name": "commit-sense-ai",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A2A, MCP and A2UI powered Agentic Git security & quality inspector",
   "main": "src/cli.js",
   "type": "module",
   "bin": {
-    "commit-sense": "./src/cli.js",
-    "commit-sense-ai": "./src/cli.js"
+    "commit-sense": "src/cli.js",
+    "commit-sense-ai": "src/cli.js"
   },
   "files": [
     "src/",
