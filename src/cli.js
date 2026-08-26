@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 import { GraphEngine } from "./graph/engine.js";
 import { A2UICliRenderer } from "./protocol/a2uiCli.js";
+import { loadConfig } from "./config.js";
 
 async function main() {
   const engine = new GraphEngine();
   const renderer = new A2UICliRenderer();
+  const config = loadConfig();
 
   // --staged veya -s bayrağı kontrolü
   const isStaged = process.argv.includes("--staged") || process.argv.includes("-s");
   
   // Analiz sürecini çalıştır
-  const result = await engine.runInspection({ staged: isStaged });
-  
+  const result = await engine.runInspection({ staged: isStaged, config });  
   // CLI arayüzüne sonuç raporunu çizdir
   renderer.render(result);
 

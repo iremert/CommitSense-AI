@@ -110,6 +110,30 @@ jobs:
 * CI/CD Pipeline Doğrulaması:
 ![CommitSense AI CI/CD Passed](docs/images/action.png)
 
+### 5. Yapılandırabilirlik (.commitsenserc)
+
+Projenizin kök dizinine `.commitsenserc` dosyası ekleyerek tarama kurallarını, hariç tutulacak dosyaları (ignore) ve şirketinize özel gizli bilgi (secret) desenlerini tanımlayabilirsiniz:
+
+```json
+{
+  "severity": "strict",
+  "ignore": [
+    "node_modules/**",
+    "dist/**",
+    "docs/images/**"
+  ],
+  "customRules": [
+    {
+      "id": "company-secret",
+      "name": "Şirket Özel Key Sızıntısı",
+      "pattern": "COMP_KEY_[a-zA-Z0-9]{16}",
+      "severity": "critical",
+      "message": "Şirket içi özel API key sızıntısı tespit edildi! Lütfen .env dosyasına taşıyın."
+    }
+  ]
+}
+```
+
 ---
 
 ## 💡 Neden CommitSense AI?

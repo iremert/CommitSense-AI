@@ -22,8 +22,10 @@ export class GraphEngine {
     this.bus.register(this.contextAgent.card);
   }
 
-  async runInspection(options = { staged: false }) {
+  async runInspection(options = { staged: false, config: {} }) {
     console.log("\n🚀 [GRAPH ENGINE] Inspection started...");
+
+    const config = options.config || {};
 
     // Adım 1: MCP üzerinden Git Diff verisini al
     const diff = await this.mcpServer.executeTool("get_git_diff", { staged: options.staged });
@@ -37,31 +39,31 @@ export class GraphEngine {
       };
     }
 
-    // Adım 2: Her bir alt ajan için A2A standart görev (Task) paketlerini oluştur
+    // Adım 2: Her bir alt ajan için A2A standart görev (Task) paketlerini oluştur (config verisini ekledik)
     const secTask = new Task({
       taskId: `task-sec-${Date.now()}`,
       agentId: this.securityAgent.card.id,
-      inputData: { diff }
+      inputData: { diff, config }
     });
 
     const qualTask = new Task({
       taskId: `task-qual-${Date.now()}`,
       agentId: this.qualityAgent.card.id,
-      inputData: { diff }
+      inputData: { diff, config }
     });
 
     const ctxTask = new Task({
       taskId: `task-ctx-${Date.now()}`,
       agentId: this.contextAgent.card.id,
-      inputData: { diff }
+      inputData: { diff, config }
     });
 
     // Adım 3: Subagent'ları A2A görevleriyle paralel çalıştır (Execute Task)
     console.log("🔄 [GRAPH ENGINE] Subagents analyzing diff via A2A Tasks...");
     const [completedSecTask, completedQualTask, completedCtxTask] = await Promise.all([
-      this.securityAgent.executeTask(secTask, diff),
-      this.qualityAgent.executeTask(qualTask, diff),
-      this.contextAgent.executeTask(ctxTask, diff)
+      this.securityAgent.executeTask(secTask, diff, config),
+      this.qualityAgent.executeTask(qualTask, diff, config),
+      this.contextAgent.executeTask(ctxTask, diff, config)
     ]);
 
     // Adım 4: Task'lar içindeki Artifact (çıktı) verilerini çıkar

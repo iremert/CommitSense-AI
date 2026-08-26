@@ -18,8 +18,9 @@ export class ContextAgent {
    * A2A Standardına Uygun Görev Çalıştırma Metodu
    * @param {Task} task - A2A Görev Nesnesi
    * @param {string} gitDiff - İnceleme yapılacak git diff metni
+   * @param {object} config - .commitsenserc içerik nesnesi
    */
-  async executeTask(task, gitDiff) {
+  async executeTask(task, gitDiff, config = {}) {
     task.markWorking();
 
     try {

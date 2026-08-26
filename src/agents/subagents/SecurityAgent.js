@@ -6,7 +6,7 @@ export class SecurityAgent {
       id: "security-agent",
       name: "Security & Secret Scanner",
       role: "Security Specialist",
-      description: "Scans code diffs for secrets, API keys, hardcoded credentials, and dangerous functions.",
+      description: "Scans code diffs for secrets, API keys, hardcoded credentials, custom patterns, and dangerous functions.",
       skills: [
         { id: "secret-leak-detection", name: "Secret Scanner" },
         { id: "vulnerability-scan", name: "Vulnerability Detector" }
@@ -18,8 +18,9 @@ export class SecurityAgent {
    * A2A Standardına Uygun Görev Çalıştırma Metodu
    * @param {Task} task - A2A Görev Nesnesi
    * @param {string} gitDiff - İnceleme yapılacak git diff metni
+   * @param {object} config - .commitsenserc içerik nesnesi
    */
-  async executeTask(task, gitDiff) {
+  async executeTask(task, gitDiff, config = {}) {
     task.markWorking();
 
     try {
@@ -65,7 +66,7 @@ export class SecurityAgent {
         });
       }
 
-      // 4. Kural: Güvensiz HTTP Kullanımı (Düşük Seviye)
+      // 4. Kural: Güvensiz HTTP Kullanımı (Düşüş Seviye)
       if (/http:\/\/[^\s"']+/g.test(gitDiff)) {
         issues.push({
           severity: "LOW",
@@ -73,6 +74,23 @@ export class SecurityAgent {
           message: "Şifrelenmemiş HTTP protokolü kullanımı tespiti.",
           suggestion: "Güvenli iletişim için HTTPS protokolünü tercih edin."
         });
+      }
+
+      // 5. Kural: .commitsenserc İçinden Gelen Özel Kurallar (Custom Rules) Taraması
+      if (Array.isArray(config.customRules) && config.customRules.length > 0) {
+        for (const rule of config.customRules) {
+          if (!rule.pattern) continue;
+          
+          const customRegex = new RegExp(rule.pattern, "g");
+          if (customRegex.test(gitDiff)) {
+            issues.push({
+              severity: (rule.severity || "HIGH").toUpperCase(),
+              file: "Detected in diff",
+              message: rule.message || `Özel güvenlik kuralı ihlali: ${rule.name || rule.id}`,
+              suggestion: rule.suggestion || "Tanımlanan özel güvenlik kuralına uyacak şekilde kodunuzu güncelleyin."
+            });
+          }
+        }
       }
 
       // Analiz sonucunu A2A Artifact paketi olarak göreve ekle

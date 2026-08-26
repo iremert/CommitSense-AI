@@ -1,0 +1,46 @@
+{
+  "severity": "strict",
+  "maxDiffSizeKb": 500,
+  "ignore": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    "docs/images/**",
+    "*.min.js",
+    "package-lock.json",
+    "pnpm-lock.yaml"
+  ],
+  "agentRules": {
+    "security": {
+      "failFastOnCritical": true,
+      "checkEntropy": true
+    },
+    "quality": {
+      "maxLineLength": 120,
+      "disallowConsoleLog": false
+    }
+  },
+  "customRules": [
+    {
+      "id": "company-secret",
+      "name": "Şirket Özel Key Sızıntısı",
+      "pattern": "COMP_KEY_[a-zA-Z0-9]{16}",
+      "severity": "critical",
+      "message": "Şirket içi özel API key tespiti! Lütfen bu veriyi .env dosyasına taşıyın."
+    },
+    {
+      "id": "internal-ip-leak",
+      "name": "İç Ağ IP Sızıntısı",
+      "pattern": "10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}",
+      "severity": "high",
+      "message": "Kod içinde dahili şirket IP adresi tespit edildi."
+    },
+    {
+      "id": "todo-fixme-check",
+      "name": "Unutulmuş TODO/FIXME Etiketi",
+      "pattern": "(TODO|FIXME):",
+      "severity": "low",
+      "message": "Commit öncesi tamamlanmamış görev etiketi (TODO/FIXME) bulundu."
+    }
+  ]
+}   

@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { GraphEngine } from "./graph/engine.js";
+import { loadConfig } from "./config.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,7 +19,12 @@ app.use(express.json());
 app.get("/api/inspect", async (req, res) => {
   try {
     const isStaged = req.query.staged === "true";
-    const result = await engine.runInspection({ staged: isStaged });
+    
+    // .commitsenserc veya varsayılan yapılandırmayı yükle
+    const config = loadConfig();
+    
+    // Analiz sürecini config verisiyle çalıştır
+    const result = await engine.runInspection({ staged: isStaged, config });
     return res.json(result);
   } catch (error) {
     console.error("❌ Inspection sırasında hata oluştu:", error);
