@@ -1,1 +1,1 @@
-npx --no -- commit-sense-ai --staged
+npx.cmd commit-sense-ai --staged

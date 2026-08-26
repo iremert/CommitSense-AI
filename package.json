@@ -2,18 +2,27 @@
   "name": "commit-sense-ai",
   "version": "1.0.4",
   "description": "A2A, MCP and A2UI powered Agentic Git security & quality inspector",
-  "main": "src/cli.js",
+  "main": "./src/index.js",
+  "module": "./src/index.js",
   "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./sdk": "./src/sdk.js",
+    "./config": "./src/config.js"
+  },
   "bin": {
-    "commit-sense": "src/cli.js",
-    "commit-sense-ai": "src/cli.js"
+    "commit-sense": "./src/cli.js",
+    "commit-sense-ai": "./src/cli.js"
   },
   "files": [
     "src/",
-    "README.md"
+    "README.md",
+    ".commitsenserc"
   ],
   "scripts": {
     "start": "node src/cli.js",
+    "inspect": "node src/cli.js",
+    "inspect:staged": "node src/cli.js --staged",
     "dev": "node --watch src/cli.js",
     "web": "node src/server.js",
     "prepare": "husky"

@@ -2,7 +2,7 @@
 
 > **Agentic Git Security & Quality Inspection Engine**
 
-CommitSense AI, yazılım geliştirme süreçlerinde `git commit` öncesi veya CI/CD aşamalarında kod değişikliklerini (`git diff`) çoklu ajan (Multi-Agent) mimarisiyle tarayan, güvenlik ihlallerini ve kod kalitesi sorunlarını anlık olarak tespit eden yapay zeka destekli bir denetim motorudur.
+CommitSense AI; yazılım geliştirme süreçlerinde `git commit` öncesinde, CI/CD boru hatlarında veya özel Node.js uygulamalarında kod değişikliklerini (`git diff`) otonom çoklu ajan (Multi-Agent) mimarisiyle tarayan, güvenlik ihlallerini ve kod kalitesi sorunlarını anlık olarak tespit eden modüler bir denetim ve SDK motorudur.
 
 ---
 
@@ -134,6 +134,89 @@ Projenizin kök dizinine `.commitsenserc` dosyası ekleyerek tarama kuralların�
 }
 ```
 
+### 6. Programatik SDK & API Entegrasyonu
+
+CommitSense AI, Node.js / TypeScript uygulamalarınız, CI/CD süreçleriniz, backend servisleriniz veya dahili araçlarınıza doğrudan modül olarak entegre edilebilir.
+
+#### Kurulum
+
+```bash
+npm install commit-sense-ai
+``` 
+
+* Kullanım Senaryoları
+1. Kod Diff Analizi (Custom Diff Inspection)
+Uygulama içinden dinamik olarak metin formatındaki kod farklarını analiz edin:
+```bash
+import { CommitSense } from 'commit-sense-ai';
+
+const commitSense = new CommitSense();
+
+const diff = `
++ const secretKey = "------";
++ console.log("Debugging session");
+`;
+
+const analysis = await commitSense.inspectDiff(diff);
+
+if (analysis.decision.status === 'BLOCK') {
+  console.error('🚫 Güvenlik / Kalite İhlali Saptandı!');
+  console.log('Neden:', analysis.decision.reason);
+} else {
+  console.log('✅ Kod diff geçişe uygun.');
+}
+``` 
+
+2. Tek Satırlık Hızlı Çağrı
+Kestirme fonksiyon ile hızlıca analiz yapın:
+```bash
+import { inspectCode } from 'commit-sense-ai';
+
+const result = await inspectCode(rawGitDiff);
+console.log(result.reports.security);
+``` 
+
+3. Yerel Staging Alanı Denetimi
+Özel build script'lerinizde yerel git staging alanını kontrol edin:
+```bash
+import { CommitSense } from 'commit-sense-ai';
+
+const inspector = new CommitSense();
+const result = await inspector.inspectStaged();
+
+console.log('Staging Durumu:', result.status);
+``` 
+
+SDK Çıktı Yapısı (Payload Schema)
+```bash
+{
+  "timestamp": "2026-08-26T16:53:38.586Z",
+  "decision": {
+    "status": "PASS | BLOCK | WARN",
+    "reason": "Tüm güvenlik ve kalite denetimleri başarıyla geçildi.",
+    "actionRequired": "Commit güvenle atılabilir."
+  },
+  "reports": {
+    "security": {
+      "agentId": "security-agent",
+      "status": "PASSED | FAILED",
+      "issues": []
+    },
+    "quality": {
+      "agentId": "quality-agent",
+      "status": "PASSED | FAILED",
+      "issues": []
+    },
+    "context": {
+      "agentId": "context-agent",
+      "summary": "Diff analizi tamamlandı.",
+      "suggestedCommitMsg": "feat: update codebase"
+    }
+  }
+}
+``` 
+
+
 ---
 
 ## 💡 Neden CommitSense AI?
@@ -151,46 +234,55 @@ Geleneksel linter ve linter benzeri statik analiz araçları kural tabanlı çal
 Proje, bağımsız modüllerin ve ajanların haberleştiği modüler bir mimari üzerine kurulmuştur:
 
 ```text
-               +----------------------------------+
-               |  CLI / Web Dashboard / Pre-Commit |
-               +----------------------------------+
-                                |
-                                v
-                      +-------------------+
-                      |    GraphEngine    |
-                      |   (Orkestratör)   |
-                      +-------------------+
-                                |
-         +----------------------+----------------------+
-         |                      |                      |
-         v                      v                      v
-+-----------------+   +-------------------+   +------------------+
-|   MCP Server    |   |  A2A Message Bus  |   | HarnessEvaluator |
-| (git diff/status|   | (Görev Dağıtımı)  |   | (Nihai Karar)    |
-+-----------------+   +-------------------+   +------------------+
-                                |
-         +----------------------+----------------------+
-         |                      |                      |
-         v                      v                      v
-+-----------------+   +-------------------+   +------------------+
-|  SecurityAgent  |   |   QualityAgent    |   |   ContextAgent   |
-| (Secret Scan)   |   | (Code Hygiene)    |   | (Semantic/Diff)  |
-+-----------------+   +-------------------+   +------------------+
++-------------------------------------------------------+
+               |  CLI  |  Web Dashboard  |  Git Hooks  |  SDK / API   |
+               +-------------------------------------------------------+
+                                           |
+                                           v
+                               +-----------------------+
+                               |    .commitsenserc     |
+                               | (Konfigürasyon Motoru)|
+                               +-----------------------+
+                                           |
+                                           v
+                               +-----------------------+
+                               |      GraphEngine      |
+                               |     (Orkestratör)     |
+                               +-----------------------+
+                                           |
+                 +-------------------------+-------------------------+
+                 |                         |                         |
+                 v                         v                         v
+       +-------------------+     +-------------------+     +-------------------+
+       |    MCP Server     |     |  A2A Message Bus  |     | HarnessEvaluator  |
+       | (Git Diff/Staging)|     | (Görev Dağıtımı)  |     |   (Nihai Karar)   |
+       +-------------------+     +-------------------+     +-------------------+
+                                           |
+                 +-------------------------+-------------------------+
+                 |                         |                         |
+                 v                         v                         v
+       +-------------------+     +-------------------+     +-------------------+
+       |   SecurityAgent   |     |   QualityAgent    |     |   ContextAgent    |
+       | (Secret & Pattern)|     |  (Code Hygiene)   |     | (Semantic Commit) |
+       +-------------------+     +-------------------+     +-------------------+
 
 ```
 
 ### 1. Model Context Protocol (MCP) Katmanı
-Git deposundaki staged (sahneye alınan) veya unstaged (çalışma alanındaki) değişiklikleri güvenli bir şekilde `git diff` ve `git status` araçları üzerinden okur ve ajanlara aktarır.
+Git deposundaki staged (sahneye alınan) veya dışarıdan sağlanan ham metin farklarını (raw diff) güvenli bir şekilde okur ve ajanların işleyebileceği yapılandırılmış veri formatına dönüştürür.
 
-### 2. A2A (Agent-to-Agent) Protokolü
+### 2. Yapılandırma ve Kural Motoru (.commitsenserc)
+Proje kökündeki konfigürasyon dosyasını tarayarak dinamik hariç tutma (ignore) kurallarını, katılık seviyelerini (strict, moderate) ve şirkete özel yazılmış özel regex sızıntı desenlerini (custom secret rules) çalışma zamanında ajanlara enjekte eder.
+
+### 3. A2A (Agent-to-Agent) Protokolü
 Ajanların kendi aralarında ortak veri formatında (Task, AgentCard, Artifact) haberleşmesini ve bağımsız görev yürütmesini (ExecuteTask) sağlar.
 
-### 3. Otonom Alt Ajanlar (Subagents)
+### 4. Otonom Alt Ajanlar (Subagents)
 * 🛡️ **SecurityAgent:** AWS Key, Private Key, JWT gibi hassas bilgilerin sızmasını önler.
 * 🐞 **QualityAgent:** `debugger`, boş `catch` blokları, print/log kalıntıları gibi kod hijyeni ihlallerini yakalar.
 * 🧠 **ContextAgent:** Kodun mimari bağlamını inceleyerek geliştiriciye Conventional Commits formatında açıklayıcı commit mesajları önerir.
 
-### 4. Harness Evaluator (Karar Mekanizması)
+### 5. Harness Evaluator (Karar Mekanizması)
 Tüm ajanlardan gelen analiz sonuçlarını (Artifacts) birleştirerek projenin commit edilebilirliğine dair nihai kararı verir:
 * 🟢 **PASS:** Kod temiz, commit atılabilir.
 * 🟡 **WARN:** Küçük kalite sorunları var, dikkat edilmeli.
@@ -200,6 +292,11 @@ Tüm ajanlardan gelen analiz sonuçlarını (Artifacts) birleştirerek projenin 
 
 ## 📊 Öne Çıkan Özellikler
 
-* **Çift Arayüz Desteği:** Hem renkli ve bilgilendirici bir CLI arayüzü hem de tarayıcı üzerinden kontrol edilebilen canlı Web Dashboard.
-* **Hızlı Paralel Analiz:** Tüm alt ajanlar `Promise.all` kurgusuyla diff verisini eş zamanlı inceler.
-* **Esnek Kural Seti:** Güvenlik ve kalite standartlarına göre kolayca genişletilebilir ajan mimarisi.
+* 🖥️ **Çoklu Arayüz Desteği:** Terminal (CLI), Canlı Web Dashboard ve Git Pre-commit Hook (Husky) üzerinden kesintisiz çalışabilme.
+* 📦 **Programlanabilir SDK (API):** Kendi Node.js/TypeScript projelerinize, CI/CD süreçlerinize veya botlarınıza `import { CommitSense } from 'commit-sense-ai'` ile kolayca entegre edebilme.
+* ⚙️ **Esnek ve Dinamik Yapılandırma (`.commitsenserc`):** Özel secret kalıpları tanımlama, belirli dosya yollarını taramadan muaf tutma (ignore) ve katılık seviyelerini özelleştirebilme.
+* ⚡ **Eşzamanlı Paralel Analiz:** A2A yapısı sayesinde tüm alt ajanların diff verisini `Promise.all` kurgusuyla milisaniyeler içinde incelemesi.
+* ⚙️ **Akıllı Commit Önerisi:** Yapılan değişiklikleri (dosya yolları ve kod kalıpları) analiz ederek kural tabanlı Conventional Commit mesajları üretme.
+
+
+---
