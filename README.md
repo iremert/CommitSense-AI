@@ -107,6 +107,8 @@ jobs:
 
 ```
 * `.github/workflows/commit-sense.yml` dosyasını oluşturup kaydettikten sonra projeyi GitHub'a push ederek Actions sekmesinden canlı çalışmasını kontrol edelim!
+* CI/CD Pipeline Doğrulaması:
+![CommitSense AI CI/CD Passed](docs/images/action.png)
 
 ---
 
