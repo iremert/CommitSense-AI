@@ -15,7 +15,8 @@
   "scripts": {
     "start": "node src/cli.js",
     "dev": "node --watch src/cli.js",
-    "web": "node src/server.js"
+    "web": "node src/server.js",
+    "prepare": "husky"
   },
   "dependencies": {
     "@google/genai": "latest",
@@ -27,5 +28,8 @@
     "zod": "^4.4.3"
   },
   "author": "İrem Ertürk",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
 }

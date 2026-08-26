@@ -1,0 +1,25 @@
+name: CommitSense AI Security & Quality Check
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repoyu Klonla
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node.js Ortamını Hazırla
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: CommitSense AI ile Tüm Çalışma Alanını Tara
+        run: npx commit-sense-ai --all
