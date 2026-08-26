@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { GraphEngine } from "./graph/engine.js";
 import { A2UICliRenderer } from "./protocol/a2uiCli.js";
 

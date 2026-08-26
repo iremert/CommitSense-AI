@@ -5,8 +5,13 @@
   "main": "src/cli.js",
   "type": "module",
   "bin": {
-    "commit-sense": "./src/cli.js"
+    "commit-sense": "./src/cli.js",
+    "commit-sense-ai": "./src/cli.js"
   },
+  "files": [
+    "src/",
+    "README.md"
+  ],
   "scripts": {
     "start": "node src/cli.js",
     "dev": "node --watch src/cli.js",
@@ -20,5 +25,7 @@
     "express": "^4.19.2",
     "fastmcp": "^4.16.8",
     "zod": "^4.4.3"
-  }
+  },
+  "author": "İrem Ertürk",
+  "license": "MIT"
 }
