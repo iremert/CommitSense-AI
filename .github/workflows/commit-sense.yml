@@ -21,5 +21,5 @@ jobs:
         with:
           node-version: '20'
 
-      - name: CommitSense AI ile Tüm Çalışma Alanını Tara
-        run: npx commit-sense-ai --all
+      - name: CommitSense AI ile Denetim Yap
+        run: npx commit-sense-ai@latest --all
